@@ -169,8 +169,8 @@ function renderDashboard(){
  $('#recentList').innerHTML=movements.length?movements.map(m=>`<div class="mini-row"><div><strong>${m.type}</strong><div class="muted">${fmtDate(m.date)} · ${esc(m.label||'')}</div></div><span class="badge">${money(m.amount)}</span></div>`).join(''):'<div class="empty">Todavía no hay movimientos nuevos.</div>';
 }
 function renderStock(){const q=($('#stockSearch')?.value||'').toLowerCase();const rows=state.products.filter(p=>p.active!==false&&p.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));$('#stockTable').innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td>${esc(p.presentation||'')}</td><td><span class="badge ${p.stock<=2?'low':p.stock<=5?'':'ok'}">${p.stock}</span></td><td>${money(p.price)}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar producto" aria-label="Editar producto" onclick="editProduct('${p.id}')">✏️</button><button class="icon-action delete" type="button" title="Eliminar producto" aria-label="Eliminar producto" onclick="deleteProduct('${p.id}')">🗑</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin productos</td></tr>'}
-function renderEntries(){$('#entriesTable').innerHTML=entryGroups().map(g=>`<tr><td>${fmtDate(g.date)}</td><td><strong>${esc(g.supplier||'Sin proveedor')}</strong></td><td><div class="op-detail">${operationDetail(g.items,'unit_cost')}</div></td><td><strong>${money(g.total)}</strong></td><td>${esc(g.note||'')}</td><td><div class="row-actions"><button class="btn secondary small" type="button" onclick="downloadEntryPdf('${g.id}')">PDF</button><button class="btn share small" type="button" onclick="shareEntryPdf('${g.id}')">Compartir</button><button class="btn danger small" type="button" onclick="deleteEntry('${g.id}')">Eliminar</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No hay entradas registradas todavía</td></tr>'}
-function renderSales(){$('#salesTable').innerHTML=saleGroups().map(g=>{const summary=g.items.map(x=>`${x.product_name}: ${x.qty} u. × ${money(x.unit_price)} = ${money(x.total)}`).join(' · ');return `<tr title="${esc(summary)}"><td>${fmtDate(g.date)}</td><td>${esc(g.client)}</td><td><strong>${money(g.total)}</strong></td><td>${money(g.paid)}</td><td>${esc(g.method||'')}</td><td><div class="row-actions compact-actions"><button class="icon-action pdf" type="button" title="Descargar PDF" aria-label="Descargar PDF" onclick="downloadSalePdf('${g.id}')">📄</button><button class="icon-action share" type="button" title="Compartir" aria-label="Compartir" onclick="shareSalePdf('${g.id}')">📤</button><button class="icon-action delete" type="button" title="Eliminar venta" aria-label="Eliminar venta" onclick="deleteSale('${g.id}')">🗑</button></div></td></tr>`}).join('')||'<tr><td colspan="6" class="empty">No hay ventas registradas todavía</td></tr>'}
+function renderEntries(){$('#entriesTable').innerHTML=entryGroups().map(g=>`<tr><td>${fmtDate(g.date)}</td><td><strong>${esc(g.supplier||'Sin proveedor')}</strong></td><td><div class="op-detail">${operationDetail(g.items,'unit_cost')}</div></td><td><strong>${money(g.total)}</strong></td><td>${esc(g.note||'')}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar entrada" aria-label="Editar entrada" onclick="editEntry('${g.id}')">✏️</button><button class="icon-action pdf" type="button" title="Descargar PDF" aria-label="Descargar PDF" onclick="downloadEntryPdf('${g.id}')">📄</button><button class="icon-action share" type="button" title="Compartir" aria-label="Compartir" onclick="shareEntryPdf('${g.id}')">📤</button><button class="icon-action delete" type="button" title="Eliminar entrada" aria-label="Eliminar entrada" onclick="deleteEntry('${g.id}')">🗑</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No hay entradas registradas todavía</td></tr>'}
+function renderSales(){$('#salesTable').innerHTML=saleGroups().map(g=>{const summary=g.items.map(x=>`${x.product_name}: ${x.qty} u. × ${money(x.unit_price)} = ${money(x.total)}`).join(' · ');return `<tr title="${esc(summary)}"><td>${fmtDate(g.date)}</td><td>${esc(g.client)}</td><td><strong>${money(g.total)}</strong></td><td>${money(g.paid)}</td><td>${esc(g.method||'')}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar venta" aria-label="Editar venta" onclick="editSale('${g.id}')">✏️</button><button class="icon-action pdf" type="button" title="Descargar PDF" aria-label="Descargar PDF" onclick="downloadSalePdf('${g.id}')">📄</button><button class="icon-action share" type="button" title="Compartir" aria-label="Compartir" onclick="shareSalePdf('${g.id}')">📤</button><button class="icon-action delete" type="button" title="Eliminar venta" aria-label="Eliminar venta" onclick="deleteSale('${g.id}')">🗑</button></div></td></tr>`}).join('')||'<tr><td colspan="6" class="empty">No hay ventas registradas todavía</td></tr>'}
 function renderPayments(){$('#paymentsTable').innerHTML=state.payments.slice().sort(descDate).map(x=>`<tr><td>${fmtDate(x.date)}</td><td>${esc(x.client||'')}</td><td>${money(x.amount)}</td><td>${esc(x.method||'')}</td><td>${esc(x.note||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No hay pagos registrados todavía</td></tr>'}
 function renderSupplierPayments(){
   if(!$('#supplierPaymentsTable'))return;
@@ -289,6 +289,76 @@ function openSale(){
   });
   setTimeout(()=>setupCart('sale',cart),0);
 }
+
+
+function qtyMap(items){
+  const m=new Map();
+  items.forEach(x=>m.set(String(x.product_id),(m.get(String(x.product_id))||0)+Number(x.qty||0)));
+  return m;
+}
+function cartFromEntryGroup(g){return g.items.map(x=>({product_id:String(x.product_id),product_name:x.product_name,qty:Number(x.qty),unit_value:Number(x.unit_cost||0)}))}
+function cartFromSaleGroup(g){return g.items.map(x=>({product_id:String(x.product_id),product_name:x.product_name,qty:Number(x.qty),unit_value:Number(x.unit_price||0)}))}
+async function replaceRemoteRows(table,oldItems,newRows){
+  const ins=await supa.from(table).insert(newRows);if(ins.error)throw ins.error;
+  const oldIds=oldItems.map(x=>String(x.id));
+  const del=await supa.from(table).delete().in('id',oldIds);if(del.error)throw del.error;
+}
+
+window.editEntry=id=>{
+  const g=findEntryGroup(id);if(!g)return toast('No se encontró la entrada');
+  const cart=cartFromEntryGroup(g),originalItems=g.items.map(x=>({...x}));
+  openForm('Editar entrada',field('Fecha','date','date',String(g.date).slice(0,10),'required')+field('Proveedor','supplier','text',g.supplier==='Sin proveedor'?'':g.supplier,'required')+field('Nota','note','text',g.note||'','','full')+cartBuilderHtml('entry'),async e=>{
+    e.preventDefault();if(!cart.length)return toast('Agregá al menos un producto');
+    const d=Object.fromEntries(new FormData(e.target)),oldQty=qtyMap(originalItems),newQty=qtyMap(cart),allIds=new Set([...oldQty.keys(),...newQty.keys()]);
+    const changes=[];
+    for(const pid of allIds){
+      const p=state.products.find(x=>String(x.id)===String(pid));if(!p)return toast('No se encontró uno de los productos');
+      const delta=Number(newQty.get(pid)||0)-Number(oldQty.get(pid)||0),newStock=Number(p.stock)+delta;
+      if(newStock<0)return toast(`No se puede guardar: ${p.name} quedaría con stock negativo`);
+      const last=cart.filter(x=>String(x.product_id)===String(pid)).at(-1);
+      changes.push({p,newStock,newCost:last?Number(last.unit_value):Number(p.cost||0)});
+    }
+    const operationId=g.legacy?uid():g.id;
+    const rows=cart.map((x,i)=>({id:uid(),operation_id:operationId,date:d.date,supplier:(d.supplier||'').trim(),product_id:x.product_id,product_name:x.product_name,qty:Number(x.qty),unit_cost:Number(x.unit_value),total:Number(x.qty)*Number(x.unit_value),note:i===0?(d.note||''):''}));
+    if(remoteMode){
+      try{
+        await replaceRemoteRows('entries',originalItems,rows);
+        for(const c of changes){const up=await supa.from('products').update({stock:c.newStock,cost:c.newCost}).eq('id',c.p.id);if(up.error)throw up.error}
+      }catch(err){console.error(err);await syncFromRemote();return toast('No se pudo editar la entrada: '+(err.message||'error'))}
+    }
+    const ids=new Set(originalItems.map(x=>x.id));state.entries=state.entries.filter(x=>!ids.has(x.id));rows.forEach(r=>state.entries.push(r));changes.forEach(c=>{c.p.stock=c.newStock;c.p.cost=c.newCost});
+    await persist();closeModal();render();toast('Entrada actualizada y stock recalculado');
+  });
+  setTimeout(()=>setupCart('entry',cart),0);
+};
+
+window.editSale=id=>{
+  const g=findSaleGroup(id);if(!g)return toast('No se encontró la venta');
+  const cart=cartFromSaleGroup(g),originalItems=g.items.map(x=>({...x}));
+  openForm('Editar venta',field('Fecha','date','date',String(g.date).slice(0,10),'required')+field('Cliente','client','text',g.client||'Consumidor final')+field('Cobrado ahora','paid','number',Number(g.paid||0),'min="0" step="0.01" required')+selectField('Medio de pago','method',[{value:'Efectivo',label:'Efectivo'},{value:'Transferencia',label:'Transferencia'},{value:'Cuenta corriente',label:'Cuenta corriente'},{value:'Otro',label:'Otro'}])+cartBuilderHtml('sale'),async e=>{
+    e.preventDefault();if(!cart.length)return toast('Agregá al menos un producto');
+    const d=Object.fromEntries(new FormData(e.target)),oldQty=qtyMap(originalItems),newQty=qtyMap(cart),allIds=new Set([...oldQty.keys(),...newQty.keys()]);
+    const changes=[];
+    for(const pid of allIds){
+      const p=state.products.find(x=>String(x.id)===String(pid));if(!p)return toast('No se encontró uno de los productos');
+      const newStock=Number(p.stock)+Number(oldQty.get(pid)||0)-Number(newQty.get(pid)||0);
+      if(newStock<0)return toast(`Stock insuficiente de ${p.name} para guardar esta modificación`);
+      const last=cart.filter(x=>String(x.product_id)===String(pid)).at(-1);
+      changes.push({p,newStock,newPrice:last?Number(last.unit_value):Number(p.price||0)});
+    }
+    const grandTotal=cart.reduce((a,x)=>a+Number(x.qty)*Number(x.unit_value),0),paid=Math.min(Number(d.paid||0),grandTotal),operationId=g.legacy?uid():g.id;
+    const rows=cart.map((x,i)=>({id:uid(),operation_id:operationId,date:d.date,client:d.client||'Consumidor final',product_id:x.product_id,product_name:x.product_name,qty:Number(x.qty),unit_price:Number(x.unit_value),total:Number(x.qty)*Number(x.unit_value),paid:i===0?paid:0,method:d.method}));
+    if(remoteMode){
+      try{
+        await replaceRemoteRows('sales',originalItems,rows);
+        for(const c of changes){const up=await supa.from('products').update({stock:c.newStock,price:c.newPrice}).eq('id',c.p.id);if(up.error)throw up.error}
+      }catch(err){console.error(err);await syncFromRemote();return toast('No se pudo editar la venta: '+(err.message||'error'))}
+    }
+    const ids=new Set(originalItems.map(x=>x.id));state.sales=state.sales.filter(x=>!ids.has(x.id));rows.forEach(r=>state.sales.push(r));changes.forEach(c=>{c.p.stock=c.newStock;c.p.price=c.newPrice});
+    await persist();closeModal();render();toast('Venta actualizada y stock recalculado');
+  });
+  setTimeout(()=>{setupCart('sale',cart);const method=form.elements.method;if(method)method.value=g.method||'Efectivo'},0);
+};
 
 
 

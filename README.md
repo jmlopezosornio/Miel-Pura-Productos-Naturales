@@ -45,3 +45,7 @@ Después de ejecutar el SQL, reemplazá en GitHub los archivos de la versión an
 - Stock: botones de editar y eliminar. La eliminación solo se habilita cuando el stock es exactamente 0; se realiza como baja lógica para conservar el historial de operaciones.
 - PDF de entradas: agrega la columna Presentación y queda ordenado como Producto, Presentación, Cantidad, Costo unitario y Costo total.
 - No requiere cambios adicionales en Supabase respecto de la versión 1.9/V10.
+
+
+## V12 - Edición de operaciones
+Se agregó edición de Entradas y Ventas completas, incluyendo sus múltiples productos. Al guardar, el stock se recalcula por diferencia. No requiere cambios en Supabase.
