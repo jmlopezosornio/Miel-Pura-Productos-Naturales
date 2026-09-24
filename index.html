@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#8a5a20" />
+  <title>Miel & Productos Naturales | Gestión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <form id="loginForm" class="login-card">
+      <img class="login-logo" src="logo_miel.jpg" alt="Miel Pura & Productos Naturales">
+      <p class="eyebrow">Miel Pura & Productos Naturales</p>
+      <h2>Ingresar al sistema</h2>
+      <p class="login-help">Este acceso se utiliza cuando la base online de Supabase está activada.</p>
+      <div class="field"><label>Email</label><input class="input" name="email" type="email" required></div>
+      <div class="field"><label>Contraseña</label><input class="input" name="password" type="password" required></div>
+      <button class="btn primary login-btn" type="submit">Ingresar</button>
+      <div id="loginError" class="login-error"></div>
+    </form>
+  </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img class="brand-logo" src="logo_miel.jpg" alt="Miel Pura & Productos Naturales">
+      </div>
+      <nav id="nav">
+        <button class="nav-item active" data-view="dashboard">▦ <span>Resumen</span></button>
+        <button class="nav-item" data-view="stock">▤ <span>Stock</span></button>
+        <button class="nav-item" data-view="entradas">＋ <span>Entradas</span></button>
+        <button class="nav-item" data-view="ventas">$ <span>Ventas</span></button>
+        <button class="nav-item" data-view="cobranza">✓ <span>Cobranza</span></button>
+        <button class="nav-item" data-view="proveedores">$ <span>Pagos</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div id="storageBadge" class="storage-badge">Modo local</div>
+        <small>Versión 2.0</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Control comercial</p>
+          <h1 id="pageTitle">Resumen</h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn secondary" id="backupBtn">Exportar copia</button>
+          <button class="btn primary" data-open-sale>＋ Nueva venta</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view active">
+        <div class="kpis">
+          <article class="kpi"><span>Stock valorizado</span><strong id="kpiStockCost">$0</strong><small>A costo</small></article>
+          <article class="kpi"><span>Valor potencial</span><strong id="kpiStockSale">$0</strong><small>A precio de venta</small></article>
+          <article class="kpi"><span>Ventas registradas</span><strong id="kpiSales">$0</strong><small id="kpiSalesCount">0 operaciones</small></article>
+          <article class="kpi"><span>Saldo a cobrar</span><strong id="kpiDebt">$0</strong><small>Ventas menos cobros</small></article>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><div><h2>Stock bajo</h2><p>Productos con 5 unidades o menos</p></div></div>
+            <div id="lowStockList" class="mini-list"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h2>Últimos movimientos</h2><p>Entradas, ventas, cobranzas y pagos recientes</p></div></div>
+            <div id="recentList" class="mini-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="stock" class="view">
+        <article class="panel">
+          <div class="panel-head actions-wrap">
+            <div><h2>Productos y stock</h2><p>Stock inicial importado de tu Excel</p></div>
+            <div class="inline-actions">
+              <input id="stockSearch" class="input compact" placeholder="Buscar producto..." />
+              <button class="btn primary" id="newProductBtn">＋ Producto</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table class="stock-table"><thead><tr><th>Producto</th><th>Presentación</th><th>Unidades</th><th>Valor de venta</th><th>Acción</th></tr></thead><tbody id="stockTable"></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="entradas" class="view">
+        <article class="panel">
+          <div class="panel-head actions-wrap"><div><h2>Entradas de mercadería</h2><p>Cada entrada incrementa automáticamente el stock</p></div><button class="btn primary" id="newEntryBtn">＋ Registrar entrada</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Productos / costo</th><th>Total pedido</th><th>Nota</th><th>Acción</th></tr></thead><tbody id="entriesTable"></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="ventas" class="view">
+        <article class="panel">
+          <div class="panel-head actions-wrap"><div><h2>Ventas</h2><p>Descuenta stock y registra cobros o saldos pendientes</p></div><button class="btn primary" data-open-sale>＋ Nueva venta</button></div>
+          <div class="table-wrap sales-table-wrap"><table class="sales-compact-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Total venta</th><th>Total cobrado</th><th>Medio</th><th>Acción</th></tr></thead><tbody id="salesTable"></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="cobranza" class="view">
+        <article class="panel">
+          <div class="panel-head actions-wrap"><div><h2>Cobranza</h2><p>Registra pagos posteriores realizados por clientes</p></div><button class="btn primary" id="newPaymentBtn">＋ Registrar cobranza</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Importe</th><th>Medio</th><th>Nota</th></tr></thead><tbody id="paymentsTable"></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="proveedores" class="view">
+        <div class="kpis supplier-kpis">
+          <article class="kpi"><span>Compras a proveedores</span><strong id="kpiSupplierPurchases">$0</strong><small>Total de entradas</small></article>
+          <article class="kpi"><span>Pagado a proveedores</span><strong id="kpiSupplierPaid">$0</strong><small>Pagos registrados</small></article>
+          <article class="kpi"><span>Deuda a proveedores</span><strong id="kpiSupplierDebt">$0</strong><small>Entradas menos pagos</small></article>
+        </div>
+        <div class="grid-2 supplier-grid">
+          <article class="panel">
+            <div class="panel-head"><div><h2>Saldos por proveedor</h2><p>Se calcula automáticamente desde las entradas</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Proveedor</th><th>Compras</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody id="supplierBalancesTable"></tbody></table></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head actions-wrap"><div><h2>Pagos a proveedores</h2><p>Podés adjuntar PDF o imagen del comprobante</p></div><button class="btn primary" id="newSupplierPaymentBtn">＋ Registrar pago</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Importe</th><th>Medio</th><th>Comprobante</th><th>Acción</th></tr></thead><tbody id="supplierPaymentsTable"></tbody></table></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Nuevo registro</p><h2 id="modalTitle">Formulario</h2></div><button class="icon-btn" id="closeModal">×</button></div><form id="modalForm" class="form-grid"></form></div></div>
+
+  <div id="toast" class="toast"></div>
+  <img id="reportLogo" src="logo_miel.jpg" alt="" class="report-logo-preload" aria-hidden="true">
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
