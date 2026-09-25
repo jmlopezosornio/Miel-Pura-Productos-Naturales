@@ -4,20 +4,11 @@ const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS
 const today = () => new Date().toISOString().slice(0,10);
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random());
 
-const seedProducts = [
- ['Miel 1kg','1 kg',23,5000,10000],['Miel 1/2kg','1/2 kg',8,3000,6000],['Almendras','1/2 kg',8,8500,11000],
- ['Nueces','1/2 kg',2,9000,12000],['Aceite','1 L',2,8000,12000],['Aceituna','1 kg',3,8000,13000],
- ['Ciruelas','1/2 kg',2,4250,7000],['Maní','1/2 kg',8,1500,5000],['Cajú','1/2 kg',2,8500,11000],
- ['Mix sin maní','1/2 kg',1,6750,10000],['Mix tropical','1/2 kg',15,6250,9000],['Granola','1 kg',6,6500,12000],
- ['Pasas de uva','1/2 kg',5,3000,6000],['Coco','1/2 kg',0,5750,8000],['Chip Banana','1/2 kg',4,5500,8000],
- ['Aceitunas Negras','1 kg',6,9500,15000],['Avellanas','1/2 kg',0,15000,20000],['Miel Cremosa','1 kg',14,5000,15000]
-].map((p,i)=>({id:'seed-'+(i+1),name:p[0],presentation:p[1],stock:p[2],cost:p[3],price:p[4],active:true}));
-
-const initialState = {products:seedProducts,entries:[],sales:[],payments:[],supplierPayments:[],openingDebt:475000};
+const initialState = {products:[],entries:[],sales:[],payments:[],supplierPayments:[],openingDebt:0};
 
 class LocalStore {
   constructor(){this.key='miel_stock_app_v1';}
-  load(){const raw=localStorage.getItem(this.key); if(!raw){this.save(initialState);return structuredClone(initialState)}; try{return JSON.parse(raw)}catch{return structuredClone(initialState)}}
+  load(){const raw=localStorage.getItem(this.key); if(!raw)return structuredClone(initialState); try{return JSON.parse(raw)}catch{return structuredClone(initialState)}}
   save(s){localStorage.setItem(this.key,JSON.stringify(s))}
 }
 
@@ -34,6 +25,10 @@ async function initStorage(){
       $('#storageBadge').textContent='Supabase conectado';
       const {data:{session}}=await supa.auth.getSession();
       if(!session){ await requireLogin(); }
+      // En modo Supabase, la nube es la única fuente de datos.
+      // Eliminamos el respaldo local heredado para impedir reimportaciones accidentales.
+      localStorage.removeItem('miel_stock_app_v1');
+      state=structuredClone(initialState);
       await pullRemote();
     }catch(e){console.error(e); $('#loginError').textContent=e.message||'No se pudo conectar'; throw e;}
   }
@@ -52,31 +47,7 @@ async function requireLogin(){
   });
 }
 
-async function uploadLocalStateToRemote(){
-  // Primera migración: si Supabase está vacío, copiamos los datos que ya existen
-  // en el navegador actual para no perder ventas, entradas, pagos ni stock.
-  const products=state.products.map(x=>({
-    id:String(x.id), name:x.name, presentation:x.presentation||'',
-    stock:Number(x.stock||0), cost:Number(x.cost||0), price:Number(x.price||0),
-    active:x.active!==false
-  }));
-  if(products.length){
-    const r=await supa.from('products').upsert(products);
-    if(r.error) throw r.error;
-  }
-  const entries=state.entries.map(x=>({...x,id:String(x.id),product_id:String(x.product_id)}));
-  const sales=state.sales.map(x=>({...x,id:String(x.id),product_id:String(x.product_id)}));
-  const payments=state.payments.map(x=>({...x,id:String(x.id)}));
-  const supplierPayments=(state.supplierPayments||[]).map(x=>({...x,id:String(x.id)}));
-  if(entries.length){const r=await supa.from('entries').upsert(entries); if(r.error) throw r.error;}
-  if(sales.length){const r=await supa.from('sales').upsert(sales); if(r.error) throw r.error;}
-  if(payments.length){const r=await supa.from('payments').upsert(payments); if(r.error) throw r.error;}
-  if(supplierPayments.length){const r=await supa.from('supplier_payments').upsert(supplierPayments); if(r.error) throw r.error;}
-  const setr=await supa.from('app_settings').upsert({id:1,opening_debt:Number(state.openingDebt||0)});
-  if(setr.error) throw setr.error;
-}
-
-async function pullRemote({allowInitialMigration=true}={}){
+async function pullRemote(){
   const [p,e,s,pa,sp,st]=await Promise.all([
     supa.from('products').select('*').order('name'),
     supa.from('entries').select('*').order('date',{ascending:false}),
@@ -86,11 +57,6 @@ async function pullRemote({allowInitialMigration=true}={}){
     supa.from('app_settings').select('*').eq('id',1).maybeSingle()
   ]);
   for(const r of [p,e,s,pa,sp,st]) if(r.error) throw r.error;
-
-  if(!p.data.length && allowInitialMigration){
-    await uploadLocalStateToRemote();
-    return pullRemote({allowInitialMigration:false});
-  }
 
   state={
     products:p.data||[],
@@ -108,7 +74,7 @@ async function syncFromRemote({silent=true}={}){
   if(!remoteMode || syncBusy) return;
   syncBusy=true;
   try{
-    await pullRemote({allowInitialMigration:false});
+    await pullRemote();
     render();
     if(!silent) toast('Datos sincronizados');
   }catch(err){
