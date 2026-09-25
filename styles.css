@@ -118,3 +118,5 @@
   .cart-add-row .field:nth-child(3){grid-column:1/-1}
   .cart-add-btn{grid-column:1/-1;width:100%;min-width:0}
 }
+
+.icon-action.clean{background:#fff6d8}

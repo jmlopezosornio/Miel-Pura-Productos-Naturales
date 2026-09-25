@@ -169,7 +169,7 @@ function renderDashboard(){
  $('#recentList').innerHTML=movements.length?movements.map(m=>`<div class="mini-row"><div><strong>${m.type}</strong><div class="muted">${fmtDate(m.date)} · ${esc(m.label||'')}</div></div><span class="badge">${money(m.amount)}</span></div>`).join(''):'<div class="empty">Todavía no hay movimientos nuevos.</div>';
 }
 function renderStock(){const q=($('#stockSearch')?.value||'').toLowerCase();const rows=state.products.filter(p=>p.active!==false&&p.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));$('#stockTable').innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td>${esc(p.presentation||'')}</td><td><span class="badge ${p.stock<=2?'low':p.stock<=5?'':'ok'}">${p.stock}</span></td><td>${money(p.price)}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar producto" aria-label="Editar producto" onclick="editProduct('${p.id}')">✏️</button><button class="icon-action delete" type="button" title="Eliminar producto" aria-label="Eliminar producto" onclick="deleteProduct('${p.id}')">🗑</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin productos</td></tr>'}
-function renderEntries(){$('#entriesTable').innerHTML=entryGroups().map(g=>`<tr><td>${fmtDate(g.date)}</td><td><strong>${esc(g.supplier||'Sin proveedor')}</strong></td><td><div class="op-detail">${operationDetail(g.items,'unit_cost')}</div></td><td><strong>${money(g.total)}</strong></td><td>${esc(g.note||'')}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar entrada" aria-label="Editar entrada" onclick="editEntry('${g.id}')">✏️</button><button class="icon-action pdf" type="button" title="Descargar PDF" aria-label="Descargar PDF" onclick="downloadEntryPdf('${g.id}')">📄</button><button class="icon-action share" type="button" title="Compartir" aria-label="Compartir" onclick="shareEntryPdf('${g.id}')">📤</button><button class="icon-action delete" type="button" title="Eliminar entrada" aria-label="Eliminar entrada" onclick="deleteEntry('${g.id}')">🗑</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No hay entradas registradas todavía</td></tr>'}
+function renderEntries(){$('#entriesTable').innerHTML=entryGroups().map(g=>`<tr><td>${fmtDate(g.date)}</td><td><strong>${esc(g.supplier||'Sin proveedor')}</strong></td><td><div class="op-detail">${operationDetail(g.items,'unit_cost')}</div></td><td><strong>${money(g.total)}</strong></td><td>${esc(g.note||'')}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar entrada" aria-label="Editar entrada" onclick="editEntry('${g.id}')">✏️</button>${hasExactEntryDuplicates(g)?`<button class="icon-action clean" type="button" title="Limpiar duplicados" aria-label="Limpiar duplicados" onclick="cleanEntryDuplicates('${g.id}')">🧹</button>`:''}<button class="icon-action pdf" type="button" title="Descargar PDF" aria-label="Descargar PDF" onclick="downloadEntryPdf('${g.id}')">📄</button><button class="icon-action share" type="button" title="Compartir" aria-label="Compartir" onclick="shareEntryPdf('${g.id}')">📤</button><button class="icon-action delete" type="button" title="Eliminar entrada" aria-label="Eliminar entrada" onclick="deleteEntry('${g.id}')">🗑</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="empty">No hay entradas registradas todavía</td></tr>'}
 function renderSales(){$('#salesTable').innerHTML=saleGroups().map(g=>{const summary=g.items.map(x=>`${x.product_name}: ${x.qty} u. × ${money(x.unit_price)} = ${money(x.total)}`).join(' · ');return `<tr title="${esc(summary)}"><td>${fmtDate(g.date)}</td><td>${esc(g.client)}</td><td><strong>${money(g.total)}</strong></td><td>${money(g.paid)}</td><td>${esc(g.method||'')}</td><td><div class="row-actions compact-actions"><button class="icon-action edit" type="button" title="Editar venta" aria-label="Editar venta" onclick="editSale('${g.id}')">✏️</button><button class="icon-action pdf" type="button" title="Descargar PDF" aria-label="Descargar PDF" onclick="downloadSalePdf('${g.id}')">📄</button><button class="icon-action share" type="button" title="Compartir" aria-label="Compartir" onclick="shareSalePdf('${g.id}')">📤</button><button class="icon-action delete" type="button" title="Eliminar venta" aria-label="Eliminar venta" onclick="deleteSale('${g.id}')">🗑</button></div></td></tr>`}).join('')||'<tr><td colspan="6" class="empty">No hay ventas registradas todavía</td></tr>'}
 function renderPayments(){$('#paymentsTable').innerHTML=state.payments.slice().sort(descDate).map(x=>`<tr><td>${fmtDate(x.date)}</td><td>${esc(x.client||'')}</td><td>${money(x.amount)}</td><td>${esc(x.method||'')}</td><td>${esc(x.note||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No hay pagos registrados todavía</td></tr>'}
 function renderSupplierPayments(){
@@ -299,9 +299,15 @@ function qtyMap(items){
 function cartFromEntryGroup(g){return g.items.map(x=>({product_id:String(x.product_id),product_name:x.product_name,qty:Number(x.qty),unit_value:Number(x.unit_cost||0)}))}
 function cartFromSaleGroup(g){return g.items.map(x=>({product_id:String(x.product_id),product_name:x.product_name,qty:Number(x.qty),unit_value:Number(x.unit_price||0)}))}
 async function replaceRemoteRows(table,oldItems,newRows){
-  const ins=await supa.from(table).insert(newRows);if(ins.error)throw ins.error;
+  // Reutiliza los IDs existentes para evitar duplicados si una edición se repite
+  // o si una operación anterior quedó a medio completar.
   const oldIds=oldItems.map(x=>String(x.id));
-  const del=await supa.from(table).delete().in('id',oldIds);if(del.error)throw del.error;
+  const rows=newRows.map((r,i)=>({...r,id:i<oldIds.length?oldIds[i]:String(r.id)}));
+  const up=await supa.from(table).upsert(rows,{onConflict:'id'});if(up.error)throw up.error;
+  const keep=new Set(rows.map(r=>String(r.id)));
+  const remove=oldIds.filter(id=>!keep.has(id));
+  if(remove.length){const del=await supa.from(table).delete().in('id',remove);if(del.error)throw del.error;}
+  return rows;
 }
 
 window.editEntry=id=>{
@@ -452,6 +458,38 @@ window.shareSalePdf=async id=>{
     if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({title:'Comprobante de venta',text,files:[file]});return}
     doc.save(salePdfName(g));toast('Tu navegador no permite compartir el PDF: se descargó el archivo');
   }catch(err){if(err?.name==='AbortError')return;console.error(err);toast(err.message||'No se pudo compartir el PDF')}
+};
+
+function entryDuplicateKey(x){
+  return [String(x.product_id),Number(x.qty||0),Number(x.unit_cost||0),String(x.product_name||'').trim().toLowerCase()].join('|');
+}
+function hasExactEntryDuplicates(group){
+  const seen=new Set();
+  for(const x of group.items){const k=entryDuplicateKey(x);if(seen.has(k))return true;seen.add(k)}
+  return false;
+}
+window.cleanEntryDuplicates=async id=>{
+  const g=findEntryGroup(id);if(!g)return toast('No se encontró la entrada');
+  const seen=new Set(),dups=[];
+  for(const x of g.items){
+    const k=entryDuplicateKey(x);
+    if(seen.has(k))dups.push(x);else seen.add(k);
+  }
+  if(!dups.length)return toast('Esta entrada no tiene líneas duplicadas exactas');
+  const ok=window.confirm(`Se encontraron ${dups.length} línea(s) duplicada(s) en esta entrada.
+
+¿Querés eliminarlas?
+
+Esta limpieza NO modificará el stock; solamente quitará registros repetidos del detalle.`);
+  if(!ok)return;
+  if(remoteMode){
+    const ids=dups.map(x=>String(x.id));
+    const del=await supa.from('entries').delete().in('id',ids);
+    if(del.error)return toast('No se pudieron limpiar los duplicados: '+del.error.message);
+  }
+  const dupIds=new Set(dups.map(x=>String(x.id)));
+  state.entries=state.entries.filter(x=>!dupIds.has(String(x.id)));
+  await persist();render();toast(`${dups.length} duplicado(s) eliminado(s) sin modificar el stock`);
 };
 
 window.deleteEntry=async id=>{
