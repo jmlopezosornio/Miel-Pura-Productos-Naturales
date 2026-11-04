@@ -95,8 +95,8 @@ function startAutoSync(){
 async function persist(){ if(!remoteMode) local.save(state); }
 
 function render(){renderDashboard();renderStock();renderEntries();renderSales();renderPayments();renderSupplierPayments();}
-function stockCost(){return state.products.reduce((a,p)=>a+Number(p.stock)*Number(p.cost||0),0)}
-function stockSale(){return state.products.reduce((a,p)=>a+Number(p.stock)*Number(p.price||0),0)}
+function stockCost(){return state.products.filter(p=>p.active!==false).reduce((a,p)=>a+Number(p.stock)*Number(p.cost||0),0)}
+function stockSale(){return state.products.filter(p=>p.active!==false).reduce((a,p)=>a+Number(p.stock)*Number(p.price||0),0)}
 function salesTotal(){return state.sales.reduce((a,s)=>a+Number(s.total||0),0)}
 function collectedFromSales(){return state.sales.reduce((a,s)=>a+Number(s.paid||0),0)}
 function paymentsTotal(){return state.payments.reduce((a,p)=>a+Number(p.amount||0),0)}
@@ -129,7 +129,7 @@ function renderDashboard(){
  const salesOps=saleGroups();
  $('#kpiStockCost').textContent=money(stockCost()); $('#kpiStockSale').textContent=money(stockSale()); $('#kpiSales').textContent=money(salesTotal());
  $('#kpiSalesCount').textContent=`${salesOps.length} ${salesOps.length===1?'operación':'operaciones'}`; $('#kpiDebt').textContent=money(debtTotal());
- const lows=state.products.filter(p=>Number(p.stock)<=5).sort((a,b)=>a.stock-b.stock);
+ const lows=state.products.filter(p=>p.active!==false && Number(p.stock)<=5).sort((a,b)=>a.stock-b.stock);
  $('#lowStockList').innerHTML=lows.length?lows.slice(0,8).map(p=>`<div class="mini-row"><div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.presentation||'')}</div></div><span class="badge ${p.stock<=2?'low':''}">${p.stock} u.</span></div>`).join(''):'<div class="empty">Sin alertas de stock</div>';
  const movements=[...entryGroups().map(g=>({date:g.date,type:'Entrada',label:g.supplier&&g.supplier!=='Sin proveedor'?g.supplier:(g.items.length===1?g.items[0].product_name:`${g.items.length} productos`),amount:g.total})),...saleGroups().map(g=>({date:g.date,type:'Venta',label:g.client,amount:g.total})),...state.payments.map(x=>({...x,type:'Cobranza',label:x.client||x.note||'',amount:x.amount})),...(state.supplierPayments||[]).map(x=>({...x,type:'Pago proveedor',label:x.supplier||x.note||'',amount:x.amount}))].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,7);
  $('#recentList').innerHTML=movements.length?movements.map(m=>`<div class="mini-row"><div><strong>${m.type}</strong><div class="muted">${fmtDate(m.date)} · ${esc(m.label||'')}</div></div><span class="badge">${money(m.amount)}</span></div>`).join(''):'<div class="empty">Todavía no hay movimientos nuevos.</div>';
