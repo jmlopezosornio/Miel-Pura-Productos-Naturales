@@ -120,3 +120,224 @@
 }
 
 .icon-action.clean{background:#fff6d8}
+
+
+/* V18 / 2.6: vista móvil dedicada */
+@media(max-width:720px){
+  body{background:#f6f3ed;padding-bottom:76px}
+  .app-shell{display:block;min-height:100vh}
+  .sidebar{
+    position:fixed;
+    z-index:50;
+    left:0;right:0;bottom:0;top:auto;
+    width:100%;height:68px;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    background:#2e261d;
+    display:block;
+    box-shadow:0 -8px 24px rgba(31,24,17,.16)
+  }
+  .sidebar .brand,.sidebar-bottom{display:none!important}
+  .sidebar nav{
+    height:100%;
+    display:flex;
+    gap:4px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    align-items:stretch
+  }
+  .sidebar nav::-webkit-scrollbar{display:none}
+  .nav-item{
+    flex:1 0 64px;
+    min-width:64px;
+    padding:7px 4px;
+    border-radius:10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    text-align:center;
+    font-size:17px;
+    line-height:1
+  }
+  .nav-item span{
+    display:block!important;
+    margin:0;
+    font-size:9px;
+    line-height:1.1;
+    font-weight:700
+  }
+  .main{padding:16px 12px 24px;width:100%;min-width:0}
+  .topbar{
+    margin-bottom:14px;
+    gap:10px;
+    align-items:center
+  }
+  .topbar .eyebrow{font-size:9px}
+  h1{font-size:23px}
+  .top-actions{gap:7px}
+  .top-actions .secondary{display:none}
+  .top-actions .btn.primary{padding:10px 12px;font-size:12px;white-space:nowrap}
+  .kpis{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+  .kpi{padding:13px;border-radius:13px}
+  .kpi span{font-size:10px}
+  .kpi strong{font-size:18px;margin:6px 0 2px}
+  .kpi small{font-size:10px}
+  .grid-2,.supplier-grid{grid-template-columns:1fr;gap:12px}
+  .panel{border-radius:14px}
+  .panel-head{padding:15px}
+  .panel-head h2{font-size:16px}
+  .panel-head p{font-size:11px}
+  .actions-wrap{gap:10px}
+  .inline-actions{display:grid;grid-template-columns:1fr auto;width:100%}
+  .input.compact{width:100%}
+  .mini-list{padding:6px 14px 12px}
+  .mini-row{padding:10px 0}
+
+  /* Tablas como tarjetas: sin desplazamiento horizontal */
+  .table-wrap,.sales-table-wrap{overflow:visible}
+  .table-wrap table,.sales-compact-table,.stock-table{display:block;width:100%;table-layout:auto!important}
+  .table-wrap thead{display:none}
+  .table-wrap tbody{display:grid;gap:10px;padding:10px}
+  .table-wrap tr{
+    display:block;
+    width:100%;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:8px 12px;
+    box-shadow:0 4px 14px rgba(67,45,20,.04)
+  }
+  .table-wrap td,
+  #ventas td{
+    width:100%!important;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    padding:8px 0;
+    border-bottom:1px solid #eee8df;
+    white-space:normal!important;
+    font-size:13px
+  }
+  .table-wrap td:last-child{border-bottom:0}
+  .table-wrap td::before{
+    flex:0 0 92px;
+    color:var(--muted);
+    font-size:10px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.03em
+  }
+
+  #stock td:nth-child(1)::before{content:"Producto"}
+  #stock td:nth-child(2)::before{content:"Presentación"}
+  #stock td:nth-child(3)::before{content:"Unidades"}
+  #stock td:nth-child(4)::before{content:"Venta"}
+  #stock td:nth-child(5)::before{content:"Acción"}
+
+  #entradas td:nth-child(1)::before{content:"Fecha"}
+  #entradas td:nth-child(2)::before{content:"Proveedor"}
+  #entradas td:nth-child(3)::before{content:"Productos"}
+  #entradas td:nth-child(4)::before{content:"Total"}
+  #entradas td:nth-child(5)::before{content:"Nota"}
+  #entradas td:nth-child(6)::before{content:"Acción"}
+
+  #ventas td:nth-child(1)::before{content:"Fecha"}
+  #ventas td:nth-child(2)::before{content:"Cliente"}
+  #ventas td:nth-child(3)::before{content:"Venta"}
+  #ventas td:nth-child(4)::before{content:"Cobrado"}
+  #ventas td:nth-child(5)::before{content:"Medio"}
+  #ventas td:nth-child(6)::before{content:"Acción"}
+
+  #cobranza td:nth-child(1)::before{content:"Fecha"}
+  #cobranza td:nth-child(2)::before{content:"Cliente"}
+  #cobranza td:nth-child(3)::before{content:"Importe"}
+  #cobranza td:nth-child(4)::before{content:"Medio"}
+  #cobranza td:nth-child(5)::before{content:"Nota"}
+
+  #proveedores .panel:first-of-type td:nth-child(1)::before{content:"Proveedor"}
+  #proveedores .panel:first-of-type td:nth-child(2)::before{content:"Compras"}
+  #proveedores .panel:first-of-type td:nth-child(3)::before{content:"Pagado"}
+  #proveedores .panel:first-of-type td:nth-child(4)::before{content:"Saldo"}
+  #proveedores .panel:last-of-type td:nth-child(1)::before{content:"Fecha"}
+  #proveedores .panel:last-of-type td:nth-child(2)::before{content:"Proveedor"}
+  #proveedores .panel:last-of-type td:nth-child(3)::before{content:"Importe"}
+  #proveedores .panel:last-of-type td:nth-child(4)::before{content:"Medio"}
+  #proveedores .panel:last-of-type td:nth-child(5)::before{content:"Comprobante"}
+  #proveedores .panel:last-of-type td:nth-child(6)::before{content:"Acción"}
+
+  .op-detail{min-width:0;width:100%;gap:7px}
+  .op-line{width:100%;display:grid;grid-template-columns:1fr;gap:2px}
+  .op-line strong{white-space:normal}
+  .op-line span{font-size:11px}
+  .row-actions,.compact-actions{justify-content:flex-end;gap:7px;flex-wrap:wrap}
+  .icon-action{width:36px;height:36px;font-size:16px}
+  #stock .compact-actions{justify-content:flex-end}
+
+  /* Formularios móviles a pantalla completa */
+  .modal{padding:0;align-items:stretch}
+  .modal-card{
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh;
+    max-height:100dvh;
+    border-radius:0;
+    display:flex;
+    flex-direction:column
+  }
+  .modal-head{
+    flex:0 0 auto;
+    padding:15px 16px;
+    position:sticky;
+    top:0;
+    background:#fff;
+    z-index:3
+  }
+  .modal-head h2{font-size:20px}
+  .form-grid{
+    flex:1 1 auto;
+    overflow:auto;
+    padding:14px 14px calc(96px + env(safe-area-inset-bottom));
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px
+  }
+  .field.full,.form-actions{grid-column:1/-1}
+  .input,.select,.textarea{font-size:16px;padding:13px 12px;border-radius:11px}
+  .form-grid > .cart-builder{
+    grid-column:1/-1!important;
+    width:100%!important;
+    padding:14px;
+    border-radius:13px
+  }
+  .cart-add-row{
+    display:grid;
+    grid-template-columns:1fr 1fr!important;
+    gap:10px!important
+  }
+  .cart-add-row .field:first-child{grid-column:1/-1!important}
+  .cart-add-row .field:nth-child(2){grid-column:1/2}
+  .cart-add-row .field:nth-child(3){grid-column:2/3!important}
+  .cart-add-row .select,.cart-add-row .input{font-size:16px;padding:13px 11px}
+  .cart-add-btn{grid-column:1/-1!important;width:100%;height:46px;font-size:15px}
+  .cart-item{grid-template-columns:1fr auto 34px;gap:8px}
+  .cart-total{justify-content:space-between;gap:10px}
+  .cart-total strong{font-size:24px}
+  .form-actions{
+    position:sticky;
+    bottom:-1px;
+    z-index:4;
+    margin:0 -14px -96px;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.96);
+    border-top:1px solid var(--line);
+    display:grid;
+    grid-template-columns:1fr 1.25fr;
+    gap:9px
+  }
+  .form-actions .btn{min-height:48px;font-size:15px}
+  .toast{right:12px;left:12px;bottom:82px;text-align:center}
+  .supplier-kpis{grid-template-columns:1fr 1fr}
+  .supplier-kpis .kpi:last-child{grid-column:1/-1}
+}
